@@ -1,8 +1,11 @@
 #![allow(unused_imports)]
-use std::io::{self, Write};
+use std::io::{self, Write, BufRead, BufReader, Read};
 use std::process::exit;
 use std::env;
 use std::path::{Path, PathBuf};
+use std::fs::{self, OpenOptions};
+
+mod commands;
 
 fn main() {
     let stdin = io::stdin();
@@ -17,77 +20,29 @@ fn main() {
         stdin.read_line(&mut input).unwrap();
         let input = input.trim();
 
-        // Exit command
-        if input == "exit 0" {
-            break;
-        }
 
         // Tokenize
         let words: Vec<&str> = input.split_whitespace().collect();
 
         match words.as_slice() {
             [""] => continue,
-            ["echo", args @ ..] => cmd_echo(args),
-            ["type", args @ ..] => cmd_type(args),
+            ["echo", args @ ..] => commands::echo::cmd_echo(args),
+            ["type", args @ ..] => commands::cmd_type::cmd_type(args),
+            ["history"] => cmd_history(),
             ["exit", "session"] => {
                 println!("Terminating the current session...");
                 exit(0);
             }
-            _ => {
-                if let Some(path) = explore_path(words[0]) {
-                    println!("{} is {}", words[0], path.display());
-                } else {
-                    println!("{}: command not found", words[0]);
-                }
-            }
+            _ => println!("No such command found...")
         }
     }
 }
+//fn create_file() -> std::io::Result<()> {
+//    let mut file = File::create("foo.txt")?;
+//    file.write_all(b"Hello there")?;
+//    Ok(())
+//}
 
-fn cmd_echo(args: &[&str]) {
-    println!("{}", args.join(" "));
+fn cmd_history() {
+    
 }
-
-fn cmd_type(args: &[&str]) {
-    if args.is_empty() {
-        return;
-    }
-
-    if args.len() > 1 {
-        println!("Too many arguments...");
-        return;
-    }
-
-    let cmd = args[0];
-
-    match cmd {
-        "type" | "echo" | "exit" => {
-            println!("{} is a shell builtin", cmd);
-        }
-        _ => {
-            if let Some(path) = explore_path(cmd) {
-                println!("{} is {}", cmd, path.display());
-            } else {
-                println!("{}: Command not found...", cmd);
-            }
-        }
-    }
-}
-
-fn explore_path<P>(exe_name: P) -> Option<PathBuf>
-where
-    P: AsRef<Path>,
-{
-    env::var_os("PATH").and_then(|paths| {
-        env::split_paths(&paths)
-            .filter_map(|dir| {
-                let full_path = dir.join(&exe_name);
-                if full_path.is_file() {
-                    Some(full_path)
-                } else {
-                    None
-                }
-            }).next()
-    })
-}
-
