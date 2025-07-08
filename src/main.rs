@@ -33,7 +33,7 @@ fn main() {
                 println!("Terminating the current session...");
                 exit(0);
             }
-            _ => println!("No such command found...")
+            _ => commands::
         }
     }
 }

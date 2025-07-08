@@ -2,17 +2,21 @@ use std::io::{self, Write};
 use std::env;
 use std::path::{Path, PathBuf};
 
+mod commands;
+
 pub fn cmd_type(args: &[&str]) {
     if args.is_empty() {
         return;
     }
-
-    if args.len() > 1 {
-        println!("Too many arguments...");
-        return;
-    }
-
+//
+//    if args.len() > 1 {
+//        println!("Too many arguments...");
+//        return;
+//    }
+//
     let cmd = args[0];
+    let mut args: Vec<String> = env::args().skip(1).collect();
+    let pass_in_args = args.remove(0);
 
     match cmd {
         "type" | "echo" | "exit" => {
@@ -20,7 +24,7 @@ pub fn cmd_type(args: &[&str]) {
         }
         _ => {
             if let Some(path) = explore_path(cmd) {
-                println!("{} is {}", cmd, path.display());
+                commads::path_cmd::run_path_cmd(path, pass_in_args);
             } else {
                 println!("{}: Command not found...", cmd);
             }
