@@ -4,6 +4,7 @@ use std::process::exit;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::fs::{self, OpenOptions};
+use std::env::args;
 
 mod commands;
 
@@ -33,7 +34,12 @@ fn main() {
                 println!("Terminating the current session...");
                 exit(0);
             }
-            _ => commands::
+            _ => {
+                let word_strings: Vec<String> = words.iter().map(|s| s.to_string()).collect();
+                if let Err(e) = commands::path_cmd::run_path_cmd_wrapper(&word_strings) {
+                    eprintln!("Error: {}", e);
+                }
+            }
         }
     }
 }

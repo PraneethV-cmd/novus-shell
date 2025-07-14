@@ -2,7 +2,7 @@ use std::io::{self, Write};
 use std::env;
 use std::path::{Path, PathBuf};
 
-mod commands;
+use crate::commands::path_cmd;
 
 pub fn cmd_type(args: &[&str]) {
     if args.is_empty() {
@@ -24,7 +24,11 @@ pub fn cmd_type(args: &[&str]) {
         }
         _ => {
             if let Some(path) = explore_path(cmd) {
-                commads::path_cmd::run_path_cmd(path, pass_in_args);
+                let path_str = path.to_str().unwrap_or_default();
+                let args_vec = vec![pass_in_args];
+                if let Err(e) = path_cmd::run_path_cmd(path_str, &args_vec) {
+                    eprintln!("Error executing the command: {}", e);
+                }
             } else {
                 println!("{}: Command not found...", cmd);
             }
@@ -32,7 +36,7 @@ pub fn cmd_type(args: &[&str]) {
     }
 }
 
-fn explore_path<P>(exe_name: P) -> Option<PathBuf>
+pub fn explore_path<P>(exe_name: P) -> Option<PathBuf>
 where P: AsRef<Path>, {
     env::var_os("PATH").and_then(|paths| {
        env::split_paths(&paths)

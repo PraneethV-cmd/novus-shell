@@ -1,20 +1,29 @@
 use std::process::{Command, ExitStatus};
 use std::path::{Path, PathBuf};
-use std::io::env;
+use std::env;
+use std::io;
 
-mod commands;
+use crate::commands::cmd_type;
 
 pub fn run_path_cmd_wrapper(words: &[String]) -> io::Result<ExitStatus> {
-    let cmd = words[0];
-    let mut args: Vec<String> = env::args().slip(1).collect();
-    let pass_in_args = args.remove(0);
-    let mut file_path = commands::cmd_type::explore_path(cmd); 
-    return run_path_cmd(file_path, pass_in_args);
+    let cmd = &words[0];
+    let args = &words[1..];
+
+    let file_path = match cmd_type::explore_path(cmd) {
+        Some(path) => path,
+        None => return Err(io::Error::new(io::ErrorKind::NotFound, "command not found")),
+    };
+
+    let path_str = file_path.to_str().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidData, "Path is not valid UTF-8")
+    })?;
+
+    run_path_cmd(path_str, args)
 }
 
 pub fn run_path_cmd(file_path: &str, args: &[String]) -> io::Result<ExitStatus> {
     let mut child = Command::new(file_path)
-                                .arg(args)
+                                .args(args)
                                 .spawn()
                                 .expect("failed to execute the command");
 
@@ -22,4 +31,5 @@ pub fn run_path_cmd(file_path: &str, args: &[String]) -> io::Result<ExitStatus> 
                         .expect("failed to wait on the command child process");
 
     assert!(ecode.success());
+    Ok(ecode)
 }
